@@ -181,6 +181,97 @@ Jx().$package(function (J) {
     }
   };
 
-  
+
+  /**
+   * 对一个对象或者数组进行扩展
+   * 
+   * @param {Mixed} beExtendObj 被扩展的对象或者数组
+   * @param {Mixed} extendObj1, extendObj2 ... 用来参照扩展的对象或者数组
+   * @return {Mixed} 返回被扩展后的对象或者数组
+   * 
+   * 直接就是深拷贝, 对当前项是 Object 的时候直接就是递归调用
+   */
+  var extend = function (beExtendObj, extendObj1, extendObj2) {
+    var a = arguments;
+    var i;
+    var p;
+    var beExtendObj;
+    var extendObj;
+
+
+    // 如果只是传入了一个参数的话, 就当做是对调用者的扩展
+    // 参考 jq 里面的 $.extend 的功能
+    if (a.length === 1) {
+      beExtendObj = this;
+      // 这个 i 是用来标示从哪个位置开始是扩展的项
+      i = 0;
+    } else {
+      beExtendObj = a[0] || {};
+      i = 1;
+    }
+
+    for (; i < arguments.length; i ++) {
+      extendObj = arguments[i];
+
+      for (p in extendObj) {
+        var src = beExtendObj[p];
+        var obj = extendObj[p];
+
+        // 避免死循环
+        if (src === obj) {
+          continue;
+        }
+
+        // obj 存在, obj 是一个 Object 不是 Array 不是 dom 节点不是 Function
+        if (obj && isObject(obj) && !isArray(obj) && !obj.nodeType && !isFunction(obj) {
+          src = beExtendObj[p] || {};
+          // 直接就会进行深层次的遍历
+          beExtendObj[p] = extend(src, obj || (obj.length != null ? [ ] : { }));
+          // 拷贝的对象的当前项为 undefined 的时候, 跳过, 不为 undefined 的时候, 就进行赋值
+        } else if (obj !== undefined) {
+          beExtendObj[p] = obj;
+        }
+      }
+    }
+
+    return beExtendObj;
+  };
+
+  /**
+   * 获取当前时间的函数
+   */
+  var now = function () {
+    return + new Date();
+  };
+
+
+  var timedChunk = function (items, process, context, isShift, callback) {
+    // 把 items 转化成数组
+    var todo = items.concat();
+    // 设置一个默认延时时间
+    var delay = 25;
+
+    window.setTimeout(function () {
+      // 先取到当前的时间
+      var start = +new Date();
+
+      // 在 todo list 里面还有东西, 并且执行时间过了 50 ms 的时候
+      // 一直执行 todo list 里面的函数
+      do {
+        process.call(context, todo.shift());
+      } while (todo.length > 0 && (+new Date() - start < 50));
+
+      // 如果 50 ms 之后还有 todo 没有执行完的话
+      if (todo.length > 0) {
+        // 再把这些 arguments 执行一遍, 而且是放到另一个延时队列里面, 延时时间为 25 ms
+        window.setTimeout(arguments.callee, delay);
+      } else if (callback) {
+        // 传入了 callback 的时候, 而且 todo list 里面没东西了的时候
+        // 用 callback 调用一下子 item 
+        callback(item);
+      }
+    });
+  };
+
 
 });
