@@ -1,3 +1,7 @@
+/**
+ * 内核
+ */
+
 ;(function (tn) {
   var verson = '1.0.%Version%',
 
