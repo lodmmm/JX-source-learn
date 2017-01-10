@@ -161,7 +161,7 @@ Jx().$package(function (J) {
 
 
   /**
-   * 从第一个函数开始 try, 直到尝试出第一个可以成功执行的函数就挺尸继续后面的函数, 并返回这个成功执行的结果
+   * 从第一个函数开始 try, 直到尝试出第一个可以成功执行的函数就停止继续后面的函数, 并返回这个成功执行的结果
    * 
    * @param {Function} fn1, fn2, fn3, fn4... 要尝试的函数
    * @return {Mixed} 返回第一个成功执行的函数的返回值
@@ -270,7 +270,195 @@ Jx().$package(function (J) {
         // 用 callback 调用一下子 item 
         callback(item);
       }
-    });
+    }, delay);
+  };
+
+  /**
+   * 获取对象自身具有的属性和方法的数量
+   * 
+   * @param {Object} obj 要获取的对象
+   * @return {Number} 返回对象自身具有的属性和方法
+   */
+  var getLength = function (obj) {
+    var p, count = 0;
+
+    // for/in 循环遍历一下这个对象
+    // 注意, 这里只是对象了
+    for (p in obj) {
+      if (obj.hasOwnProperty(p)) {
+        count ++;
+      }
+    }
+
+    return count;
+  };
+
+
+  /**
+   * 一个空函数
+   * 
+   * 相当于很多框架里面的 noop
+   */
+  var emptyFunc = function () {};
+
+
+  /**
+   * 函数的重构方法
+   * 
+   * todo, 暂时不知道是什么意思
+   * 
+   * @param {Object} option 选项对象
+   * @return {Function} 返回重构后的函数执行结果
+   */
+  var rebuild = function (func, option) {
+    option = option || {};
+
+    // 如果有这个属性的话, 就直接返回就好了
+    // 没有的话就定义
+    func.$$rebuildedFunc = func.$$rebuildedFunc || function () {
+      // 先取到这个 this
+      var self2 = this;
+      var scope;
+      var args;
+
+      // 范围就是配置变量 option 里面的 contextObj 字段
+      // 或者是 this
+      scope = option.contextObj || self2;
+      // 先取到 arguments, 其实转换成了数组了
+      args = Array.prototype.slice.call(arguments, 0);
+
+      if (args !== undefined) {
+        args = args.concat(option.arguments);
+      }
+
+      // 如果说 event 字段为 false 的话, 就去掉第一个数组元素
+      if (option.event === false) {
+        args = args.slice(1);
+      }
+
+      return func.apply(scope, args);
+    }
+
+    return func.$$rebuildedFunc;
+  };
+
+
+  /**
+   * 给函数传入参数并执行
+   * 
+   * @param {Mixed} args 参数列表
+   * @return {Mixed} 返回函数执行的结果
+   */
+  var pass = function (func, var_args) {
+    // 把 slice 方法先取出来
+    var slice = Array.prototype.slice;
+
+    // 把参数里面的 var_args 取出来
+    var a = slice.call(arguments, 1);
+
+    return function () {
+      var context = this;
+      // 传入参数并执行
+      return func.apply(context, a.concat(slice.call(arguments)));
+    };
+  };
+
+
+  /**
+   * 将一个函数绑定给一个对象作为方法
+   * 
+   * @param {Function} 要绑定的函数
+   * @param {Object} 要绑定的对象
+   * @param {Mixed} args 参数列表
+   * 
+   * @return {Function} 返回被绑定 this 上下文对象函数
+   * 
+   * @exampleJx().$package(function (J) {
+   *    funcB = J.bind(funcA, obj, a, b);
+   *    funcB(c, d); // => funcA.call(obj, a, b, c, d);
+   * });
+   */
+  var bind = function (func, context, var_args) {
+    var slice = Array.prototype.slice;
+
+    // 还是取到 var_args 的字段
+    var a = slice.call(arguments, 2);
+
+    return function () {
+      return func.apply(context, a.concat(slice.call(arguments)));
+    };
+  };
+
+
+  /**
+   * 
+   */
+  var Class = function () {
+    var length = arguments.length;
+
+    // 最后一个参数当做是配置
+    var option = arguments[length - 1];
+
+    // option 里面的 init 方法
+    option.init = option.init || function () {};
+
+    // 参数中有要继承的父类
+    if (length === 2) {
+      // arguments[0] 的 extend 字段约定为继承的父类的名称
+      var superClass = arguments[0].extend;
+
+      // 搞一个新的构造函数
+      var tempClass = function () {};
+      tempClass.prototype = superClass.prototype;
+
+      var subClass = function () {
+        this.init.apply(this, arguments);
+      };
+
+      // 加一个对父类原型引用的静态属性
+      subClass.superClass = superClass.prototype;
+
+
+      // 如果父类有 func 的话, 会调用一下
+      subClass.callSuper = function (context, func) {
+        var slice = Array.prototype.slice;
+
+        var a = slice.call(arguments, 2);
+
+        // func => superClass.prototype.func
+        var func = subClass.superClass[func];
+
+        if (func) {
+          func.apply(context, a.concat(slice.call(arguments)));
+        }
+      };
+
+      // 指定原型
+      subClass.prototype = new tempClass();
+
+      // 指定构造函数
+      subClass.prototype.constructor = subClass;
+
+      // 把 subClass.prototype 和配置项 option 合在一起
+      J.extend(subClass.prototype, option);
+
+      // init 方法
+      subClass.prototype.init = function () {
+        option.init.apply(this, arguments);
+      };
+
+      return subClass;
+      // 如果参数中没有父类, 则是单纯的构建一个类
+    } else if (length === 1) {
+      var newClass = function () {
+        // 加了 return, 否则 init 的对象不生效
+        return this.init.apply(this, arguments);
+      };
+
+      // 单纯的把 prototype 指向配置项
+      newClass.prototype = option;
+      return newClass;
+    }
   };
 
 

@@ -165,7 +165,7 @@
          */
         $package : function () {
           var name = arguments[0];
-          var fnc = arguments[arguments.length - 1];
+          var func = arguments[arguments.length - 1];
           var ns = topNamespace;
           var returnValue;
 
