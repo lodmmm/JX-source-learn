@@ -1,0 +1,415 @@
+/**
+ * array 数组处理
+ */
+Jx().$package(function (J) {
+  
+  
+  /**
+   * array 命名空间
+   */
+  J.array = J.array || {};
+  
+
+
+  /**
+   * 正向查找数组元素在数组中的索引下标
+   * 
+   * @param {Array} arr 要执行操作的数组
+   * @param {Object} obj 要查找的数组的元素
+   * @param {Number} fromIndex 开始的索引
+   * 
+   * @return {Number} 返回正想查找的索引编号
+   * 
+   * 如果 Array.prototype.indexOf 支持的话, 就是用原生的 indexOf
+   * 不支持的话就通过 for 循环遍历查找
+   * 
+   * 推荐可以做成 underscore 的那种函数式, 是用 dir 来确定正向还是反向 -> 当然那样有些过分封装的意思了...
+   */
+  var indexOf = Array.prototype.indexOf 
+    ? function () {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return Array.prototype.indexOf.call(arguments[0], args);
+    } 
+    : function (arr, obj, fromIndex) {
+      // 确定开始遍历的位置
+      if (fromIndex == null) {
+        fromIndex = 0;
+      } else if (fromIndex < 0) {
+        fromIndex = Math.max(0, arr.length + fromIndex);
+      }
+
+      // for 循环找出来确定的
+      for (var i = fromIndex; i < arr.length; i ++) {
+        if (arr[i] === obj) {
+          return i;
+        }
+      }
+      return -1;
+    };
+
+  /**
+   * 反向查找, 不赘述了, 和 indexOf 差不多
+   */
+  var lastIndexOf = Array.prototype.lastIndexOf 
+    ? function () {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return Array.prototype.lastIndexOf.call(arguments[0], args);
+    }
+    : function (arr, obj, fromIndex) {
+      if (fromIndex == null) {
+        fromIndex = arr.length - 1;
+      } else if (fromIndex < 0) {
+        fromIndex = Math.max(0, arr.length + fromIndex);
+      }
+
+      for (var i = fromIndex; i >= 0; i --) {
+        if (arr[i] === obj) {
+          return i;
+        }
+      }
+
+      return -1;
+    };
+
+  /**
+   * 遍历数组, 把每个数组元素作为第一个参数来执行函数
+   * 
+   * @param {Array} arr 要执行的数组
+   * @param {Function} func 要执行的函数
+   * @param {Object} context 要执行函数时候的上下文, 非必要参数
+   */
+  var forEach = Array.prototype.forEach
+    ? function () {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return Array.prototype.forEach.apply(arguments[0], args);
+    }
+    : function (arr, func) {
+      var len = arr.length;
+      if (typeof func !== 'function') {
+        throw new TypeError();
+      }
+      var context = arguments[2];
+      for (var i = 0; i < len; i ++) {
+        if (i in arr) {
+          func.call(context, arr[i], i, arr);
+        }
+      }
+    };
+  
+  /**
+   * 用一个自定义函数来过滤数组
+   * 
+   * @param {Array} arr 要执行操作的数组
+   * @param {Function} func 过滤函数
+   * @param {Object} context 执行上下文
+   * 
+   * @return {Array} 返回筛选出来的新数组
+   * 
+   * 注意的是, 这里新数组的元素都是原来老数组的元素通过 func 执行后的执行结果
+   */
+  var filter = Array.prototype.filter
+    ? function () {
+      var args = Array.prototype.slice.call(arugments, 1);
+      return Array.prototype.filter.apply(arguments[0], args);
+    }
+    : function (arr, func) {
+      var len = arr.length;
+
+      if (typeof func !== 'function') {
+        throw new TypeError();
+      }
+
+      var res = [];
+      var context = arguments[2];
+
+      for (var i = 0; i < len; i ++) {
+        if (i in arr) {
+          var val = arr[i];
+          // 这里如果是正确的话
+          if (func.call(context, val, i, arr)) {
+            // 这里 push 的是计算结果
+            res.push(val);
+          }
+        }
+      }
+      return res;
+    }
+
+
+  /**
+   * 遍历数组, 把每个数组元素作为第一个参数来执行函数, 如果有任意一个或者多个数组元素使得函数执行结果为 true, 则返回 true, 否则返回 false
+   * 
+   * @param {Array} arr 要执行操作的数组
+   * @param {Function} func 要执行的函数
+   * @param {Object} context 上下文
+   * 
+   * @return {Boolean}
+   */
+  var some = Array.prototype.some
+    ? function () {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return Array.prototype.some.apply(arguments[0], args);
+    }
+    : function (arr, func) {
+      var len = arr.length;
+      if (typeof func !== 'function') {
+        throw new TypeError();
+      }
+
+      var context = arguments[2];
+
+      for (var i = 0; i < len; i ++) {
+        // 只要有一个可以通过, 就返回 true
+        if (i in arr && func.call(context, arr[i], i, arr)) {
+          return true;
+        }
+      }
+
+      // 走到这里说明都没通过, 则返回 false
+      return false;
+    };
+
+
+    /**
+     * 遍历数组, 把每个数组元素作为第一个参数来执行, 并把函数的返回结果放在一个数组里面返回
+     * 
+     * @param {Array} arr 要执行操作的数组
+     * @param {Function} func 要执行的函数
+     * @param {Object} context 执行函数的上下文对象
+     * 
+     * @return {Array} 返回映射后的新数组
+     */
+    var map = Array.prototype.map
+      ? function () {
+        var args = Array.prototype.slice(arguments, 1);
+        return Array.prototype.map.apply(arguments[0], args);
+      }
+      : function (arr, func) {
+        var len = arr.length;
+        
+        if (typeof func !== 'function') {
+          throw new TypeError();
+        }
+
+        var res = new Array(len);
+
+        var context = arguments[2];
+
+        for (var i = 0; i < length; i ++) {
+          if (i in arr) {
+            res[i] = func.call(context, arr[i], i, arr);
+          }
+        }
+
+        return res;
+      }
+    
+    /**
+     * 遍历数组, 把每个数组元素作为第一个参数来执行函数, 如果所有的数组成员都使得函数为 true, 则返回 true, 只要有一个不符合, 就返回 false
+     */
+    var every = Array.prototype.every
+      ? function () {
+        var args = Array.prototype.slice.call(arguments, 1);
+        return Array.prototype.every.apply(arguments[0], args);
+      }
+      : function (arr, func) {
+        var len = arr.length;
+        
+        if (typeof func !== 'function') {
+          throw new TypeError();
+        }
+
+        var context = arguments[2];
+
+        for (var i = 0; i < len; i ++) {
+          if (i in arr && !func.call(context, arr[i], i, arr)) {
+            return false;
+          }
+        }
+
+        return true;
+      };
+
+    var reduce = Array.prototype.reduce 
+      ? function () {
+        var args = Array.prototype.slice.call(arguments, 1);
+        return Array.prototype.reduce.apply(arguments[0], args);
+      }
+      : function (arr, func) {
+        var len = arr.length >>> 0;
+        if (typeof fun != "function"){
+            throw new TypeError();
+        }
+        // no value to return if no initial value and an empty array
+        if (len == 0 && arguments.length == 2){
+            throw new TypeError();
+        }
+        var i = 0;
+        if (arguments.length >= 3){
+            var rv = arguments[2];
+        }
+        else{
+            do{
+                if (i in arr){
+                  rv = arr[i++];
+                  break;
+                }
+            
+                // if array contains no values, no initial value to return
+                if (++i >= len){
+                    throw new TypeError();
+                }
+            }
+            while (true);
+        }
+        
+        for (; i < len; i++){
+            if (i in arr){
+                rv = fun.call(null, rv, arr[i], i, arr);
+            }
+        }
+        
+        return rv;
+      };
+
+    var reduceRight = Array.prototype.reduceRight 
+      ? function(){
+        var args = Array.prototype.slice.call(arguments, 1);
+        return Array.prototype.reduceRight.apply(arguments[0], args);
+      }
+      : function(arr, fun /*, initial*/){
+        var len = arr.length >>> 0;
+        if (typeof fun != "function"){
+          throw new TypeError();
+        }
+        // no value to return if no initial value, empty array
+        if (len == 0 && arguments.length == 2){
+          throw new TypeError();
+        }
+        var i = len - 1;
+        if (arguments.length >= 3){
+          var rv = arguments[2];
+        }
+        else{
+          do{
+            if (i in arr){
+              rv = arr[i--];
+              break;
+            }
+      
+              // if array contains no values, no initial value to return
+            if (--i < 0){
+              throw new TypeError();
+            }
+          }
+          while(true);
+        }
+        
+        for (; i >= 0; i--){
+          if (i in arr){
+            rv = fun.call(null, rv, arr[i], i, arr);
+          }
+        }
+        
+        return rv;
+    };
+
+
+
+    /**
+     * 将任意变量转换为数组的方法
+     * 
+     * @param {Mixed} o 任意变量
+     * @return {Array} 返回转换之后的数组
+     */
+    var toArray = function (o) {
+      var type = J.$typeof(o);
+      return (type) ? ((type !== 'array' && type !== 'arguments') ? [o] : o) : [];
+    };
+
+
+    /**
+     * 从数组中移除一个或者多个数组成员
+     * 
+     * @param {Array} arr 对象爸爸
+     * @param {Mixed} 要移除的数组成员
+     * 
+     * @return {Boolean} 找到并移除的时候, 返回 true 
+     */
+    var remove = function (arr, members) {
+      var members = toArray(members);
+      var i, j, flag = false;
+
+      for (i = 0; i < members.length; i ++) {
+        for (j = 0; j < arr.length; j ++) {
+          if (arr[j] === members[i]) {
+            arr.splice(j, 1);
+            flag = true;
+          }
+        }
+      }
+
+      return flag;
+    };
+
+
+    /**
+     * 替换一个数组成员
+     * 
+     * @param {Object} oldValue 当前数组成员
+     * @param {Object} newValue 要替换的值
+     * 
+     * @return {Boolean} 找到旧值并且替换成功, 则为 true, 反之为 false
+     */
+    var replace = function (arr, oldValue, newValue) {
+      var i;
+      for (i = 0; i < arr.length; i ++) {
+        if (arr[i] === oldValue) {
+          arr[i] = newValue;
+          return true;
+        }
+      }
+
+      return false;
+    };
+
+    /**
+     * 冒泡排序
+     * 
+     * 这里我觉得写的好的一点就是, 如果说一趟没有进行交换, 则说明那一趟就正好是排好了序, 就提前终止了算法
+     * 效率变高了
+     */
+    var bubbleSort = function (arr, compareFunc) {
+      compareFunc = compareFunc || function (num1, num2) {
+        return num1 - num2;
+      };
+
+      var n = arr.length;
+
+      // 交换顺序的临时变量
+      var temp;
+
+      // 交换标志
+      var exchange;
+
+      for (var time = 0; time < n - 1; time ++) {
+        exchange = false;
+        for (var i = n - 1; i > time; i --) {
+          // 如果前面的比后面的小, 交换位置
+          if (compareFunc(arr[i], arr[i - 1]) < 0) {
+            exchange = true;
+            temp = arr[i - 1];
+            arr[i - 1] = arr;
+            arr = temp;
+          }
+        }
+
+        // 如果说这一趟都没有发生交换的时候, 提前终止算法
+        if (!exchange) {
+          break;
+        }
+      }
+
+      return arr;
+    };
+});
