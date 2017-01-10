@@ -391,7 +391,10 @@ Jx().$package(function (J) {
 
 
   /**
+   * 创建 Class 类的类
    * 
+   * 一个参数的话, 只是简单地创建对象
+   * 两个参数的话, 第二个继承第一个参数里面的 extend 字段
    */
   var Class = function () {
     var length = arguments.length;
@@ -461,5 +464,74 @@ Jx().$package(function (J) {
     }
   };
 
+
+  var Chunk = new Class({
+    init : function (items, process, context, isShift, calback) {
+      var todo = items.concat();
+      var delay = 25;
+      
+      if (isShift) {
+        todo = items;
+      }
+
+      this.timeout = window.setTimeout(function () {
+        // 取到开始的时间
+        var start = +new Date();
+
+        // 如果说 todo 里面有东西并且执行的小于 50 ms 的话, 就一直执行 todo 里面的东西
+        do {
+          process.call(context, todo.shift())
+        } while (todo.length > 0 && (+new Date() - start < 50));
+
+        if (todo.length > 0) {
+          // 如果说 todo 里面没有执行完的话, 就放在下次的延时队列里面
+          this.timeout = window.setTimeout(arguments.callee, delay);
+        } else if (callback) {
+          callback(items);
+        }
+      }, delay);
+    },
+    stop : function () {
+      clearTimeout(this.timeout);
+    }
+  });
+
+  // 把已经定义好的方法都挂在 J 上面
+  J.isUndefined = isUndefined;
+  J.isNull = isNull;
+  J.isNumber = isNumber;
+  J.isString = isString;
+  J.isBoolean = isBoolean;
+  J.isObject = isObject;
+  J.isArray = isArray;
+  J.isArguments = isArguments;
+  J.isFunction = isFunction;
+  J.$typeof = $typeof;
+  
+  J.$return = $return;
+  J.$try = $try;
+  
+  J.emptyFunc = emptyFunc;
+  
+  J.clone = clone;
+
+  J.getLength = getLength;
+  J.checkJSON = checkJSON;
+  J.random = random;
+  J.extend = extend;
+  
+  J.now = now;
+  J.timedChunk = timedChunk;
+  
+  
+  J.rebuild = rebuild;
+  J.pass = pass;
+  J.bind = bind;
+  J.bindNoEvent = bindNoEvent;
+  
+
+  
+  J.Class = Class;
+  J.Chunk = Chunk;
 
 });
