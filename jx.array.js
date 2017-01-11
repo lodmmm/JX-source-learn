@@ -412,4 +412,143 @@ Jx().$package(function (J) {
 
       return arr;
     };
+
+    /**
+     * 二叉搜索
+     * 
+     * @param {Array} arr 源数组
+     * @param {item} item 查找的目标
+     * @param {Function} compareFunc 比较方法, 传入两个参数 a, b
+     * 
+     * @return {Number} item 所处的 indexOf
+     * 
+     * 这里的话, arr 必需是一个排序好的数组
+     */
+    var binarySearch = function (arr, item, compareFunc) {
+      var start = 0;
+      var end = arr.length;
+      var current = Math.floor((start + end) / 2);
+
+      while (current !== end) {
+        // 如果 item 比 current 大的话, 则说明在后面那一堆
+        if (compareFunc(item, arr[current]) > 0) {
+          start = current + 1;
+        } else {
+          // 否则就在前面的那一堆堆
+          end = current;
+        }
+
+        current = Math.floor((start + end) / 2);
+      };
+
+      return current;
+    };
+
+
+    /**
+     * 判断 arr 是否包含 o
+     * 
+     * @param {Array} arr
+     * @param {Object} o
+     * 
+     * @return {Boolean}
+     */
+    var contains = function (arr, o) {
+      return (indexOf(arr, o) > -1);
+    };
+
+
+    /**
+     * 唯一化一个数组
+     * 
+     * @param {Array} arr
+     * @return {Array} 由不重复元素构成的一个数组
+     * 
+     * 这个方法写的挺好, 利用 indexOf 来进行检测
+     * 效率要比 hash map 的低, 但是可以甄别 1 和 '1' 这种
+     */
+    var uniquelize = function (arr) {
+      var result = [];
+
+      for (var i = 0; i < arr.length; i ++) {
+        if (!contains(result, arr[i])) {
+          result.push(arr);
+        }
+      }
+
+      return result;
+    };
+
+
+    /**
+     * 求两个集合的交集
+     * 
+     * @param {Array} a arr1
+     * @param {Array} b arr2
+     * 
+     * @return {Array} a ∩ b
+     */
+    var intersect = function (a, b) {
+      var result = [];
+
+      for (var i = 0; i < a.length; i ++) {
+        if (contains(b, a[i])) {
+          result.push(a[i]);
+        }
+      }
+
+      return result;
+    };
+
+
+    /**
+     * 求两个数组的差集
+     * 
+     * @param {Array} a arr1
+     * @param {Array} b arr2
+     * 
+     * @return {Array} a U b
+     */
+    var minus = function (a, b) {
+      var result = [];
+
+      for (var i = 0; i < a.length; i ++) {
+        if (!contains(b, a[i])) {
+          result.push(a[i]);
+        }
+      }
+
+      return result;
+    };
+
+    /**
+     * 求两个集合的并集
+     */
+    var union = function (a, b) {
+      return uniquelize(a.concat(b));
+    };
+
+    var $A = J.array;
+
+    $A.indexOf = indexOf;
+    $A.lastIndexOf = lastIndexOf;
+    $A.forEach = forEach;
+    $A.filter = filter;
+    $A.some = some;
+    $A.map = map;
+    $A.every = every;
+    $A.reduce = reduce;
+    $A.reduceRight = reduceRight;
+
+    $A.toArray = toArray;
+    $A.remove = remove;
+    $A.replace = replace;
+    $A.bubbleSort = bubbleSort;
+    $A.binarySearch = binarySearch;
+    
+    $A.contains = contains;
+    $A.uniquelize = uniquelize;
+    $A.intersect = intersect;
+    $A.minus = minus;
+    $A.union = union;
 });
