@@ -518,6 +518,126 @@ Jx().$package(function (J) {
   };
 
 
+  var createStyleNode = function (styles, id) {
+    // 先创建一个 style 标签
+    var styleNode = $D.node({
+      id : id || '',
+      type : 'text/css'
+    });
+
+    // 插到了 head 的后面
+    // 这里之前有个错误的认识, 以为插进去的就可以立刻生效。。但是貌似是不对的
+    $D.getDocHead().appendChild(styleNode);
+
+    var stylesType = typeof styles;
+
+    if (stylesType === 'string') {
+      // 参数是 string
+      if (styleNode.stylesheet) {
+        styleNode.stylesheet.cssText = styles;
+      } else {
+        var tn = document.createTextNode(styles);
+        styleNode.appendChild(tn);
+      }
+    } else if (stylesType === 'object') {
+      // 参数是对象
+      var i = 0,
+        styleSheet = document.styleSheets[document.styleSheets.length-1];
+      for(selector in styles){
+        if(styleSheet.insertRule){
+          var rule = selector + "{" + styles[selector] + "}";
+          styleSheet.insertRule(rule, i++);
+        }else {                  //IE
+          styleSheet.addRule(selector, styles[selector], i++);
+        }
+      }
+    }
+  };
+
+
+  /**
+   * 设置元素样式, css的属性需要使用驼峰
+   *
+   * @param {Element} el
+   * @param {String} styleName
+   * @param {String} value
+   */
+  var setStyle = function (el, styleName, value) {
+    if (!el) {
+      return;
+    }
+    var name = J.browser.name;
+    // 对 float 不同叫法
+    if (styleName === 'float' || styleName === 'cssFloat') {
+      if (name === 'ie') {
+        styleName = 'styleFloat';
+      } else {
+        styleName = 'cssFloat';
+      }
+    }
+
+    // 属性为 opacity 且是 ie9 以下的版本
+    if (styleName === 'opacity' && name === ie && J.browser.ie < 9) {
+      var opacity = vale * 100;
+
+      el.style.filter = 'alpha(opacity="' + opacity + '")';
+
+      if(!el.style.zoom){
+        el.style.zoom = 1;
+      }
+
+      return;
+    }
+
+    el.style[styleName] = value;
+  };
+
+  var getStyle = function (el, styleName) {
+    if(!el){
+      return;
+    }
+
+    var win = getWin(el);
+    var name = J.browser.name;
+    // 对 float 和 opacity 区别对待
+    if(styleName === "float" || styleName === "cssFloat"){
+      if(name === "ie"){
+        styleName = "styleFloat";
+      }else{
+        styleName = "cssFloat";
+      }
+    }
+    if(styleName === "opacity" && name === "ie" && J.browser.ie<9){
+      var opacity = 1,
+        result = el.style.filter.match(/opacity=(\d+)/);
+      if(result && result[1]){
+        opacity = result[1]/100;
+      }
+      return opacity;
+    }
+
+    if (el.style[styleName]) {
+      return el.style[styleName];
+    } else if (el.currentStyle){
+      return el.currentStyle[styleName];
+    } else if (win.getComputedStyle){
+      return win.getComputedStyle(el, null)[styleName];
+    } else if (document.defaultView && document.defaultView.getComputedStyle){
+      styleName = styleName.replace(/([/A-Z])/g, "-$1");
+      styleName = styleName.toLowerCase();
+      var style = document.defaultView.getComputedStyle(el, "");
+      return style && style.getPropertyValue(styleName);
+    }
+  };
+
+  /**
+   * 添加 cssText
+   * @param el
+   * @param cssText
+   */
+  var addCssTexy = function (el, cssText) {
+    el.style.cssText += '; ' + cssText;
+  };
 
   /**
    * 设置 cssText
@@ -528,6 +648,54 @@ Jx().$package(function (J) {
   var setCssText = function (el, cssText) {
     el.style.cssText = cssText;
   };
+
+  /**
+   * 获取 cssText
+   * @param el
+   */
+  var getCssText = function (el) {
+    return el.style.cssText;
+  };
+
+
+  /**
+   * 显示元素
+   */
+  var show = function (el, displayStyle) {
+    var display;
+    // 相当于缓存的作用
+    var _oldDisplay = el.getAttribute('_oldDisplay');
+    // 如果以前有缓存
+    if (_oldDisplay) {
+      display = _oldDisplay;
+    } else {
+      display = getStyle(el, 'display');
+    }
+
+    // 对 display 属性进行设置
+    if (displayStyle) {
+      setStyle(el, 'display', displayStyle);
+    } else {
+      if (display === 'none') {
+        setStyle(el, "display", "block");
+      } else {
+        setStyle(el, "display", display);
+      }
+    }
+
+  };
+
+  /**
+   * 判断元素是否是显示状态
+   * @param el
+   * @returns {boolean}
+   */
+  var isShow = function (el) {
+    var display = getStyle(el, 'display');
+    return display !== 'none';
+  };
+
+
 
 
 
