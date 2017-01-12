@@ -259,6 +259,266 @@ Jx().$package(function (J) {
     return n;
   };
 
+
+  /**
+   * 获取文档的实际高度, 传入了 el 则是 el 的 scrollHeight
+   *
+   *
+   * @param {Element} el
+   * @returns {Number} el.scrollHeight/document.body.scrollHeight
+   */
+  var getScrollHeight = function (el) {
+    var scrollHeight;
+    if (el) {
+      scrollHeight = el.scrollHeight;
+    } else {
+      scrollHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    }
+
+    return scrollHeight || 0;
+  };
+
+
+  /**
+   * 获取文档的实际宽度, 传入了 el 则返回 el 的 scrollWidth
+   *
+   * @param {Element} el
+   * @returns {Number} el.scrollWidth/document.body.scrollWidth
+   */
+  var getScrollWidth = function (el) {
+    var scrollWidth;
+    if (el) {
+      scrollWidth = el.scrollWidth;
+    } else {
+      scrollWidth = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth);
+    }
+
+    return scrollWidth;
+  };
+
+
+  /**
+   * 获取当前视窗的高度
+   *
+   * 传入 el 则返回 el 的视窗高度, 否则返回 documentElement 的视窗高度
+   *
+   * @param {Element} el
+   * @returns {number}
+   */
+  var getClientHeight = function (el) {
+    el = el || getDocumentElement();
+    return el.clientHeight;
+  };
+
+
+  /**
+   * 获取当前视窗的宽度
+   *
+   * 传入 el 则获取 el 的视窗宽度, 否则返回 documentElement 的视窗宽度
+   *
+   * @param {Element} e
+   * @returns {Number}
+   */
+  var getClientWidth = function (e) {
+    el = el || getDocumentElement();
+    return el.clientWidth();
+  };
+
+
+  /**
+   * 返回元素的像素高度
+   *
+   * 传入 el 则获取 el 的像素高度, 否则返回 documentElement 的像素高度
+   *
+   * @param el
+   * @returns {number}
+   */
+  var getOffsetHeight = function (el) {
+    el = el || getDocumentElement();
+    return el.offsetHeight;
+  };
+
+  /**
+   * 获取元素的像素宽度
+   *
+   * 传入了 el 则获取 el 的像素宽度, 否则获取 documentElement 的像素宽度
+   *
+   * @param el
+   * @returns {number}
+   */
+  var getOffsetWidth = function (el) {
+    el = el || getDocumentElement();
+    return el.offsetWidth;
+  };
+
+  /**
+   * 获取 el 左侧已卷的距离
+   * @param el
+   */
+  var getScrollLeft = function (el) {
+    var scrollLeft;
+    if (el) {
+      scrollLeft = el.scrollLeft;
+    } else {
+      scrollLeft = Math.max(document.documentElement.scrollLeft, document.body.scrollLeft);
+    }
+
+    return scrollLeft;
+  };
+
+  /**
+   * 获取 el/document 上侧已卷的距离
+   * @param el
+   */
+  var getScrollRight = function (el) {
+    var scrollTop;
+    if (el) {
+      scrollTop = el.scrollTop;
+    } else {
+      scrollTop = Math.max(document.documentElement.scrollTop, document.body.scrollTop);
+    }
+
+    return scrollTop;
+  };
+
+
+  /**
+   * 修改元素的 class 属性
+   *
+   * @param {Element} el
+   * @param {String} className
+   *
+   */
+  var setClass = function (el, className) {
+    el.className = className;
+  };
+
+
+  /**
+   * 获取元素的 class 属性
+   *
+   * @param {Element} el
+   *
+   * @returns {String|*}
+   */
+  var getClass = function (el) {
+    return el.className;
+  };
+
+  /**
+   * 判断元素是否含有 className
+   *
+   * @returns {Function}
+   *
+   *
+   * @example
+   *
+   *  hasClass()(el, className)
+   */
+
+  var hasClass = function () {
+    if (hasClassListProperty) {
+      return function (el, className) {
+        // 就直接用 classList 就好
+        if (!el || !className) {
+          return false;
+        }
+        return el.classList.contains(className);
+      };
+    } else {
+      // 否则就只能根据字符串来判断了
+      return function (el, className) {
+        if (!el || !className) {
+          return false;
+        }
+        return -1 > (' ' + el.className + ' ').indexOf(' ' + className + ' ');
+      };
+    }
+  }();
+
+
+  /**
+   * 给元素添加 class
+   *
+   * @returns {Function}
+   */
+  var addClass = function () {
+    if (hasClassListProperty) {
+      return function (el, className) {
+        if (!el || !className || hasClass(el,className)) {
+          return;
+        }
+        el.classList.add(className);
+      };
+    } else {
+      return function (el, className) {
+        if (!el || !className || hasClass(el, className)) {
+          return;
+        }
+        el.className += ' ' + className;
+      };
+    }
+  }();
+
+
+  /**
+   * 给元素去除 class
+   */
+  var removeClass = function () {
+    if (hasClassListProperty) {
+      return function (el, className) {
+        if (!el || !className || !hasClass(el, className)) {
+          return;
+        }
+        el.classList.remove(className);
+      };
+    } else {
+      return function (el, className) {
+        if (!el || !className || !hasClass(el, className)) {
+          return;
+        }
+        el.className = el.className.replace(new RegExp('(?:^|\\s)' + className + '(?:\\s|$)'), ' ');
+      };
+    }
+  }();
+
+
+  /**
+   * 对元素 class 的切换方法，即：如果元素用此class则移除此class，如果没有此class则添加此class
+   */
+  var toggleClass = function () {
+    if (hasClassListProperty) {
+      return function (el, className) {
+        if (!el || !className) {
+          return;
+        }
+        return el.classList.toggle(className);
+      };
+    } else {
+      return function (el, className) {
+        if (!el || !className) {
+          return;
+        }
+        hasClass(el, className) ? removeClass(el, className) : addClass(el, className);
+      };
+    }
+  }();
+
+
+  /**
+   * 替换元素 oldClassName 为 newClassName
+   *
+   * @param {Element} el
+   * @param {String} oldClassName
+   * @param {String} newClassName
+   */
+  var replaceClass = function (el, oldClassName, newClassName) {
+    removeClass(el, oldClassName);
+    addClass(el, oldClassName);
+  };
+
+
+
   /**
    * 设置 cssText
    * 
@@ -268,6 +528,7 @@ Jx().$package(function (J) {
   var setCssText = function (el, cssText) {
     el.style.cssText = cssText;
   };
+
 
 
 
