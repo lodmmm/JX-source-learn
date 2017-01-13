@@ -696,6 +696,52 @@ Jx().$package(function (J) {
   };
 
 
+  /**
+   * 还原元素原来的 display 属性
+   * @param el
+   */
+  var recover = function (el) {
+    var display;
+
+    var _oldDisplay = el.getAttribute('_oldDisplay');
+
+    if (_oldDisplay) {
+      display = _oldDisplay;
+    } else {
+      display = getStyle(el, 'display');
+    }
+
+    if (display === 'none') {
+      setStyle(el, 'display', '');
+    } else {
+      setStyle(el, 'display', display);
+    }
+  };
+
+  /**
+   * 隐藏元素
+   * @param el
+   */
+  var hide = function (el) {
+    var display = getStyle(el, 'display');
+    var _oldDisplay = el.getAttribute('_oldDisplay');
+
+    // 缓存一下 display
+    if (!_oldDisplay) {
+      if (display === 'none') {
+        el.setAttribute('_oldDisplay', '');
+      } else {
+        el.setAttribute('_oldDisplay', display);
+      }
+    }
+
+    // 直接 set display => none
+    setStyle(el, 'display', 'none');
+  };
+
+  // transform 这块, 暂时不看
+
+
 
 
 
